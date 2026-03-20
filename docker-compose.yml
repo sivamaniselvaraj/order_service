@@ -1,0 +1,83 @@
+services:
+
+  db_order:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: OrderDB
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_bkp_order:/var/lib/mysql
+    networks:
+      - kafka_default
+
+  kafka_order:
+    image: apache/kafka:latest
+    container_name: kafka_order
+    hostname: kafka_order
+    environment:
+      KAFKA_ENABLE_KRAFT: yes
+      KAFKA_NODE_ID: 1
+      KAFKA_BROKER_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller               # The node acts as both broker and controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092, CONTROLLER://:9093, PLAINTEXT_DOCKER://:29092  # Ports for broker and controller
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092, PLAINTEXT_DOCKER://kafka_order:29092      # External listener for clients
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER         # Listener name for inter-controller communication
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL,PLAINTEXT_DOCKER:PLAINTEXT  # Security protocol for listeners
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093, 2@localhost:9093, 3@localhost:9093    # Quorum voters for the controller in KRaft mode
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1           # Replication factor for the offsets topic
+      #      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1   # Replication factor for transaction logs
+      #      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1              # Minimum in-sync replicas for transactional logs
+      #      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0           # Initial delay before consumer group rebalancing
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    #      KAFKA_NUM_PARTITIONS: 3                             # Default number of partitions for new topics
+
+    volumes:
+      - kafka_data:/nitnami/kafka
+    # Port for Kafka broker
+    ports:
+      - "9092:9092"
+      - "29092:9092"
+    networks:
+      - kafka_default
+  kafka-init:
+    container_name: init-order-kafka
+    image: apache/kafka:latest
+    depends_on:
+      - kafka_order
+    command:
+      - /bin/sh
+      - -c
+      - |
+        sh /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka_order:29092 --list
+        echo -e 'Creating kafka topics'
+        sh /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka_order:29092 --create --if-not-exists --topic order_topic --replication-factor 1 --partitions 1
+        echo -e 'Successfully created the following topics:'
+        sh /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka_order:29092 --list
+    networks:
+      - kafka_default
+
+  order-service:
+    build: .
+    container_name: order-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db_order
+      - kafka_order
+#      - kafka_order
+    environment:
+      - USE_SYSTEM_CA_CERTS=1
+    networks:
+      - kafka_default
+
+networks:
+  kafka_default:
+    driver: bridge
+    external: true
+
+volumes:
+  mysql_bkp_order:
+  kafka_data:
