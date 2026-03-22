@@ -22,12 +22,13 @@ CREATE TABLE IF NOT EXISTS OrderItems (
 
 
 CREATE TABLE IF NOT EXISTS OutboxEvents (
-                              id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                              aggregate_id BIGINT,
-                              event_type VARCHAR(255),
-                              payload TEXT,
-                              status VARCHAR(50),
-                              created_at TIMESTAMP
+                            event_id        BIGINT PRIMARY KEY,
+                            aggregate_type  VARCHAR(100),
+                            aggregate_id    BIGINT,
+                            event_type      VARCHAR(100),
+                            payload         JSON,
+                            status          VARCHAR(50),
+                            created_at      TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON Orders(customer_id);

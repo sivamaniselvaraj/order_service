@@ -50,13 +50,16 @@ public class OrderService {
         String correlationId = UUID.randomUUID().toString();
 
         Map<String, Object> event = Map.of(
-                "id", orderId,
-                "correlation_id", correlationId,
+                "eventType", "Order",
+                "orderId", orderId,
+                "correlationId", correlationId,
                 "status", "orderCreated"
         );
 
         OutboxEvent outbox = new OutboxEvent();
+        outbox.setEventId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
         outbox.setAggregateId(orderId);
+        outbox.setAggregateType("Ordering");
         outbox.setEventType("orderCreated");
         outbox.setPayload(new ObjectMapper().writeValueAsString(event));
         outbox.setStatus("NEW");

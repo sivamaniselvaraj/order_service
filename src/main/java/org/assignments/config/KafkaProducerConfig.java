@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.assignments.dto.OrderEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
@@ -29,7 +30,7 @@ public class KafkaProducerConfig {
 
 
     @Bean
-    public ProducerFactory<String,String> producerFactory(){
+    public ProducerFactory<String, String> producerFactory(){
         Map<String,Object> config = new HashMap<>();
         log.info("KAFKA_BOOTSTRAP_SERVER {}", KAFKA_BOOTSTRAP_SERVER);
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP_SERVER);

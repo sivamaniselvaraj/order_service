@@ -14,4 +14,4 @@ Order Service -> Saves order -> Publishes event(OrderCreated)
 ## Run
 mvn clean package
 docker build -t order-service .
-docker run -p 8081:8080 order-service
+docker run -p 8081:8081 order-service

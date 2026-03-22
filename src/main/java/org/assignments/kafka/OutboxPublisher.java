@@ -1,16 +1,20 @@
 package org.assignments.kafka;
 
+import org.assignments.dto.OrderEvent;
 import org.assignments.entity.OutboxEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.assignments.repository.OutboxRepository;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
@@ -24,24 +28,29 @@ public class OutboxPublisher {
     @Value("${spring.kafka.order-topic}")
     private String KAFKA_ORDER_TOPIC;
 
-    @Scheduled(fixedDelay = 5000)
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    @Scheduled(fixedDelay = 10000)
     public void publish(){
         List<OutboxEvent> events = outboxRepository.findByStatus("NEW");
-
-        for(OutboxEvent event : events){
-            try {
-                kafkaTemplate.send(KAFKA_ORDER_TOPIC, event.getPayload());
-
-                event.setStatus("SENT");
-            } catch (Exception e){
-                log.info(e.getMessage());
-                event.setStatus("FAILED");
+        log.debug("events to published {}", events.size() );
+        if(!events.isEmpty()) {
+            for (OutboxEvent event : events) {
+                    CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(KAFKA_ORDER_TOPIC, event.getEventId().toString(),event.getPayload());
+                    future.whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("Sent message=[" + event +
+                                    "] with offset=[" + result.getRecordMetadata().offset() + "]");
+                            event.setStatus("SENT");
+                        } else {
+                            log.info("Unable to send message=[" +
+                                    event + "] due to : " + ex.getMessage());
+                            event.setStatus("FAILED");
+                        }
+                        outboxRepository.save(event);
+                    });
+                log.info("Event published to kafka {}", event.getPayload());
             }
-
-
-            outboxRepository.save(event);
-
-            log.info("Event published to kafka {}",event.getPayload());
         }
     }
 }
