@@ -33,7 +33,14 @@ public class OrderService {
     @Transactional(rollbackFor = Exception.class)
     @CircuitBreaker(name = "orderService", fallbackMethod = "fallbackCreateOrder")
 
-    public OrderResponse createOrder(CreateOrderRequest request) {
+    public OrderResponse createOrder(CreateOrderRequest request, String idempotencyKey) {
+
+        // 🔍 Step 1: Check existing
+        Optional<Order> orderExisting = orderRepository.findByIdempotencyKey(idempotencyKey);
+
+        if (orderExisting.isPresent()) {
+            return new OrderResponse(orderExisting.get().getOrderId(), "Order Already Exists");
+        }
 
         Long orderId = System.currentTimeMillis();
 
@@ -53,7 +60,8 @@ public class OrderService {
                 "eventType", "Order",
                 "orderId", orderId,
                 "correlationId", correlationId,
-                "status", "orderCreated"
+                "status", "orderCreated",
+                "idempotencyKey",idempotencyKey
         );
 
         OutboxEvent outbox = new OutboxEvent();

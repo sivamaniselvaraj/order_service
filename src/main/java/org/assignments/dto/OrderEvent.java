@@ -7,4 +7,5 @@ public class OrderEvent {
     private String orderId;
     private String status;
     private String correlationId;
+    private String idempotencyKey;
 }

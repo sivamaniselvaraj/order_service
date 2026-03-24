@@ -12,17 +12,18 @@ import org.assignments.service.OrderService;
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin
 public class OrderController {
 
     @Autowired
     OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest request){
+    public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest request, @RequestHeader("Idempotency-Key") String idempotencyKey){
 
         log.info("Creating order for customer {}", request.getCustomerId());
 
-        return ResponseEntity.ok(orderService.createOrder(request));
+        return ResponseEntity.ok(orderService.createOrder(request, idempotencyKey));
     }
 
     @GetMapping("/{id}")

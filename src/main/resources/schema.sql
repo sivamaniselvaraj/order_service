@@ -4,8 +4,10 @@ CREATE TABLE IF NOT EXISTS Orders (
                         order_status    VARCHAR(50) NOT NULL,
                         total_amount    DECIMAL(10,2) NOT NULL,
                         currency        VARCHAR(10),
+                        idempotency_key VARCHAR(100),
                         created_at      TIMESTAMP NOT NULL,
-                        updated_at      TIMESTAMP
+                        updated_at      TIMESTAMP,
+                        CONSTRAINT (unique_idempotency) UNIQUE (idempotency_key)
 );
 
 CREATE TABLE IF NOT EXISTS OrderItems (
