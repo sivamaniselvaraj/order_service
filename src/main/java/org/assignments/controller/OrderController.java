@@ -23,6 +23,10 @@ public class OrderController {
 
         log.info("Creating order for customer {}", request.getCustomerId());
 
+        log.info("Creating order for getItems {}", request.getItems().toString());
+
+        log.info("Creating order for getItems size {}", request.getItems().size());
+
         return ResponseEntity.ok(orderService.createOrder(request, idempotencyKey));
     }
 

@@ -1,5 +1,6 @@
 package org.assignments.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -20,13 +21,14 @@ public class OrderItem {
 
     private int quantity;
 
-    private BigDecimal unitPrice;
+    private Double unitPrice;
 
-    private BigDecimal totalPrice;
+    private Double totalPrice;
 
     private LocalDateTime createdAt;
 
     @ManyToOne
     @JoinColumn(name="order_id")
+    @JsonBackReference
     private Order order;
 }

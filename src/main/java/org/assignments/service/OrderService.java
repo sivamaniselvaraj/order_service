@@ -4,8 +4,10 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.assignments.dto.CreateOrderRequest;
+import org.assignments.dto.OrderItemDTO;
 import org.assignments.dto.OrderResponse;
 import org.assignments.entity.Order;
+import org.assignments.entity.OrderItem;
 import org.assignments.entity.OutboxEvent;
 import org.assignments.repository.OrderRepository;
 import org.assignments.repository.OutboxRepository;
@@ -15,10 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +50,13 @@ public class OrderService {
         order.setTotalAmount(request.getTotalAmount());
         order.setCreatedAt(LocalDateTime.now());
         order.setCurrency(request.getCurrency());
+        order.setIdempotencyKey(idempotencyKey);
+        List<OrderItem> items = request.getItems().stream()
+                .map(itemDTO -> mapItem(itemDTO, order))
+                .toList();
+
+        order.setItems(items);
+
 
         orderRepository.save(order);
 
@@ -92,5 +98,20 @@ public class OrderService {
         return order.orElseThrow(() -> {
             return new NoSuchElementException("no data found");
         });
+    }
+
+    private static OrderItem mapItem(OrderItemDTO dto, Order order) {
+        Long orderItemId = System.currentTimeMillis();
+        OrderItem item = new OrderItem();
+        item.setOrderItemId(orderItemId);
+        item.setProductId(Long.valueOf(dto.getId()));
+        item.setProductName(dto.getName());
+        item.setUnitPrice(Double.parseDouble(dto.getPrice()));
+        item.setTotalPrice(Double.parseDouble(dto.getPrice()) * Double.parseDouble(dto.getQuantity()));
+        item.setQuantity(Integer.parseInt(dto.getQuantity()));
+        item.setCreatedAt(LocalDateTime.now());
+        item.setOrder(order); // 🔥 important for relationship
+
+        return item;
     }
 }

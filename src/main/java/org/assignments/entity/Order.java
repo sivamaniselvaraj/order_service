@@ -1,5 +1,6 @@
 package org.assignments.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -30,6 +31,7 @@ public class Order {
     @Column(name = "idempotency_key", unique = true)
     private String idempotencyKey;
 
+    @JsonManagedReference
     @OneToMany(mappedBy="order", cascade= CascadeType.ALL)
     private List<OrderItem> items;
 }
