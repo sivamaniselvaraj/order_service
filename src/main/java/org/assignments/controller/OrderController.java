@@ -36,4 +36,11 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrder(id));
     }
 
+    @GetMapping("/")
+    public ResponseEntity<?> getAllOrders() throws Exception {
+
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+
 }

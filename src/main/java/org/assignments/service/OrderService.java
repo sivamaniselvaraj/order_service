@@ -86,11 +86,13 @@ public class OrderService {
         return new OrderResponse(orderId, "CREATED");
     }
 
-    public OrderResponse fallbackCreateOrder(CreateOrderRequest request, Throwable t) {
+    public OrderResponse fallbackCreateOrder(CreateOrderRequest request, String idempotencyKey, Throwable t) {
 
         log.error("Order creation failed", t);
         return new OrderResponse(null, "FAILED");
     }
+
+
 
     @Transactional(readOnly = true)
     public Order getOrder(Long id) throws Exception {
@@ -113,5 +115,12 @@ public class OrderService {
         item.setOrder(order); // 🔥 important for relationship
 
         return item;
+    }
+
+    public Object getAllOrders() {
+        Optional<List<Order>> orderList = Optional.of(orderRepository.findAll());
+        return orderList.orElseThrow(() -> {
+            return new NoSuchElementException("no data found");
+        });
     }
 }
