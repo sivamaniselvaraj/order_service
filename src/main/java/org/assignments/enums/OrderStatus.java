@@ -2,7 +2,9 @@ package org.assignments.enums;
 
 import lombok.Getter;
 
-@Getter
+import java.util.Objects;
+
+
 public enum OrderStatus {
     CREATED("Order Created"),
     PENDING("Order Pending"),
@@ -17,4 +19,20 @@ public enum OrderStatus {
         this.status = status;
     }
 
+    public String getStatus() {
+        return this.status;
+    }
+
+    public static OrderStatus fromValue(String value)
+            throws IllegalArgumentException {
+        try {
+            for(OrderStatus e : OrderStatus.values()){
+                if(Objects.equals(value, e.status)) return e;
+            }
+
+        } catch(ArrayIndexOutOfBoundsException e) {
+            throw new IllegalArgumentException("Unknown enum value :"+ value);
+        }
+        return null;
+    }
 }

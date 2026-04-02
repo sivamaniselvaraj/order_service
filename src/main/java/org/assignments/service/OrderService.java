@@ -123,9 +123,12 @@ public class OrderService {
     }
 
     public void updateOrderStatus(Long orderId, String status) {
-        Order order = new Order();
-        order.setOrderId(orderId);
-        order.setOrderStatus(OrderStatus.valueOf(status).name());
-        orderRepository.save(order);
+        log.info("updating order status to {} for id {} - {}", status, orderId, OrderStatus.fromValue(status).name());
+        Order order = orderRepository.findById(orderId).get();
+        if(Objects.equals(order.getOrderId(), orderId)) {
+            String statusName = OrderStatus.fromValue(status).name();
+            order.setOrderStatus(statusName);
+            orderRepository.save(order);
+        }
     }
 }

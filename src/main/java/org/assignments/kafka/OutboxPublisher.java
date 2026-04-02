@@ -53,13 +53,13 @@ public class OutboxPublisher {
                             log.info("Sent message=[" + event +
                                     "] with offset=[" + result.getRecordMetadata().offset() + "]");
                             event.setStatus("SENT");
-                            orderService.updateOrderStatus(event.getAggregateId(), OrderStatus.PENDING.getStatus());
                         } else {
                             log.info("Unable to send message=[" +
                                     event + "] due to : " + ex.getMessage());
                             event.setStatus("FAILED");
                         }
                         outboxRepository.save(event);
+                        orderService.updateOrderStatus(event.getAggregateId(), OrderStatus.PENDING.getStatus());
                     });
                 log.info("Event published to kafka {}", event.getPayload());
             }
