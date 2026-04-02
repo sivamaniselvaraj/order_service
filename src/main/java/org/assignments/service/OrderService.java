@@ -9,6 +9,7 @@ import org.assignments.dto.OrderResponse;
 import org.assignments.entity.Order;
 import org.assignments.entity.OrderItem;
 import org.assignments.entity.OutboxEvent;
+import org.assignments.enums.OrderStatus;
 import org.assignments.repository.OrderRepository;
 import org.assignments.repository.OutboxRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ public class OrderService {
         Order order = new Order();
         order.setOrderId(orderId);
         order.setCustomerId(request.getCustomerId());
-        order.setOrderStatus("CREATED");
+        order.setOrderStatus(OrderStatus.CREATED.name());
         order.setTotalAmount(request.getTotalAmount());
         order.setCreatedAt(LocalDateTime.now());
         order.setCurrency(request.getCurrency());
@@ -57,7 +58,6 @@ public class OrderService {
 
         order.setItems(items);
 
-
         orderRepository.save(order);
 
         String correlationId = UUID.randomUUID().toString();
@@ -66,15 +66,15 @@ public class OrderService {
                 "eventType", "Order",
                 "orderId", orderId,
                 "correlationId", correlationId,
-                "status", "orderCreated",
+                "status", OrderStatus.CREATED.name(),
                 "idempotencyKey",idempotencyKey
         );
 
         OutboxEvent outbox = new OutboxEvent();
         outbox.setEventId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
         outbox.setAggregateId(orderId);
-        outbox.setAggregateType("Ordering");
-        outbox.setEventType("orderCreated");
+        outbox.setAggregateType("Order");
+        outbox.setEventType(OrderStatus.CREATED.name());
         outbox.setPayload(new ObjectMapper().writeValueAsString(event));
         outbox.setStatus("NEW");
         outbox.setCreatedAt(LocalDateTime.now());
@@ -83,13 +83,13 @@ public class OrderService {
 
         log.info("Order created {} and outbox event stored", orderId);
 
-        return new OrderResponse(orderId, "CREATED");
+        return new OrderResponse(orderId, OrderStatus.CREATED.name());
     }
 
     public OrderResponse fallbackCreateOrder(CreateOrderRequest request, String idempotencyKey, Throwable t) {
 
         log.error("Order creation failed", t);
-        return new OrderResponse(null, "FAILED");
+        return new OrderResponse(null, OrderStatus.FAILED.name());
     }
 
 
@@ -117,10 +117,15 @@ public class OrderService {
         return item;
     }
 
-    public Object getAllOrders() {
-        Optional<List<Order>> orderList = Optional.of(orderRepository.findAll());
-        return orderList.orElseThrow(() -> {
-            return new NoSuchElementException("no data found");
-        });
+    public List<Order> getAllOrders() {
+        List<Order> orderList = orderRepository.findAll();
+        return orderList;
+    }
+
+    public void updateOrderStatus(Long orderId, String status) {
+        Order order = new Order();
+        order.setOrderId(orderId);
+        order.setOrderStatus(OrderStatus.valueOf(status).name());
+        orderRepository.save(order);
     }
 }
