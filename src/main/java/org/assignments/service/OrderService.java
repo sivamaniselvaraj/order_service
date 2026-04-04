@@ -3,7 +3,7 @@ package org.assignments.service;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.assignments.dto.CreateOrderRequest;
+import org.assignments.dto.OrderRequest;
 import org.assignments.dto.OrderItemDTO;
 import org.assignments.dto.OrderResponse;
 import org.assignments.entity.Order;
@@ -33,7 +33,7 @@ public class OrderService {
     @Transactional(rollbackFor = Exception.class)
     @CircuitBreaker(name = "orderService", fallbackMethod = "fallbackCreateOrder")
 
-    public OrderResponse createOrder(CreateOrderRequest request, String idempotencyKey) {
+    public OrderResponse createOrder(OrderRequest request, String idempotencyKey) {
 
         // 🔍 Step 1: Check existing
         Optional<Order> orderExisting = orderRepository.findByIdempotencyKey(idempotencyKey);
@@ -86,7 +86,7 @@ public class OrderService {
         return new OrderResponse(orderId, OrderStatus.CREATED.name());
     }
 
-    public OrderResponse fallbackCreateOrder(CreateOrderRequest request, String idempotencyKey, Throwable t) {
+    public OrderResponse fallbackCreateOrder(OrderRequest request, String idempotencyKey, Throwable t) {
 
         log.error("Order creation failed", t);
         return new OrderResponse(null, OrderStatus.FAILED.name());
@@ -95,7 +95,7 @@ public class OrderService {
 
 
     @Transactional(readOnly = true)
-    public Order getOrder(Long id) throws Exception {
+    public Order getOrderById(Long id) throws Exception {
         Optional<Order> order = orderRepository.findById(id);
         return order.orElseThrow(() -> {
             return new NoSuchElementException("no data found");
