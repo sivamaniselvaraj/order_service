@@ -1,27 +1,28 @@
 server:
   port: 8081
+  servlet:
+    context-path: /api/v1
 
 spring:
   application:
-    name: orderService
+    name: order-service
   datasource:
-    url: jdbc:mysql://order-mysql:3306/order_db?allowPublicKeyRetrieval=true&useSSL=false
+    url: jdbc:mysql://order-mysql:3306/order_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create #update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
   kafka:
-    bootstrap-servers: kafka:29092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
-    order-topic: order_topic
 
 logging:
   level:
@@ -46,3 +47,10 @@ resilience4j:
         eventConsumerBufferSize: 100
 management.health.circuitbreakers.enabled: true
 management.health.ratelimiters.enabled: true
+# Kafka topics
+ordering:
+  kafka:
+    topics:
+      order-create-topic: order.created
+      order-notification-topic: order.notification.created
+
